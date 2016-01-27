@@ -12,11 +12,13 @@ class JiggieTaskSet(TaskSet):
 
 	endpoints = {
 		'login': 'login',
-		'event_list': 'events/list/{}/{}',
+		'event_list': 'events/list/{}',
 		'event_detail': 'event/details/{}/{}/{}',
 		'guest_interested': 'event/interest/{}/{}/{}',
 		'share': 'invitelink?',
-		'social': 'partyfeed/list/{}/{}'
+		'social': 'partyfeed/list/{}/{}',
+		'chat_list': 'conversations?',
+		'setting': 'membersettings?'
 	}
 
 	def getLoginParam(self):
@@ -41,7 +43,7 @@ class JiggieTaskSet(TaskSet):
 		return self.client.post(endpoint, param)
 
 	def doEventList(self, fb_id, interest):
-		endpoint = self.baseUrl + self.endpoints['event_list'].format(fb_id, interest)
+		endpoint = self.baseUrl + self.endpoints['event_list'].format(fb_id)
 
 		return self.client.get(endpoint)
 
@@ -77,7 +79,17 @@ class JiggieTaskSet(TaskSet):
 		for key in param.keys():
 			endpoint += str(key) + '=' + str(param[key]) + '&'
 
-		return self.client.get(endpoint[:-1])	
+		return self.client.get(endpoint[:-1])
+
+	def doConversationList(self, fb_id):
+		endpoint = self.baseUrl + self.endpoints['chat_list'] + 'fb_id={}'.format(fb_id)
+
+		return self.client.get(endpoint)
+
+	def doMemberSetting(self, fb_id):
+		endpoint = self.baseUrl + self.endpoints['setting'] + 'fb_id={}'.format(fb_id)
+
+		return self.client.get(endpoint)
 
 	#@task(1)
 	def goLogin(self):
@@ -126,7 +138,7 @@ class JiggieTaskSet(TaskSet):
 				res = self.doGuestInterested(event['_id'], login['data']['fb_id'], self.config['interest'])
 				guestInterested = json.loads(res.content)
 
-	@task(1)
+	#@task(1)
 	def goTillSocial(self):
 		res = self.doLogin(self.getLoginParam())
 		login = json.loads(res.content)
@@ -157,6 +169,29 @@ class JiggieTaskSet(TaskSet):
 				eventDetail = json.loads(res.content)
 
 				res = self.doShare(login['data']['fb_id'], 'event', event_id = event['_id'], venue_name = eventDetail['data']['events_details']['venue_name'])
+
+	#@task(1)
+	def goTillConvList(self):
+		res = self.doLogin(self.getLoginParam())
+		login = json.loads(res.content)
+
+		if (login['success'] == True):
+			res = self.doConversationList(login['data']['fb_id'])
+			print(res.content)
+
+	@task(1)
+	def goTillInvite(self):
+		res = self.doLogin(self.getLoginParam())
+		login = json.loads(res.content)
+
+		if (login['success'] == True):
+			res = self.doMemberSetting(login['data']['fb_id'])
+			settings = json.loads(res.content)
+
+			if (settings['success'] == True):
+				res = self.doShare(login['data']['fb_id'], 'general')
+				print(res.content)
+		 
 
 class JiggieUser(HttpLocust):
 	task_set = JiggieTaskSet
