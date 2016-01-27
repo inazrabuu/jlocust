@@ -45,22 +45,22 @@ class JiggieTaskSet(TaskSet):
 	def doEventList(self, fb_id, interest):
 		endpoint = self.baseUrl + self.endpoints['event_list'].format(fb_id)
 
-		return self.client.get(endpoint)
+		return self.client.get(endpoint, name = self.endpoints['event_list'].format(':fb_id'))
 
 	def doEventDetail(self, event_id, fb_id, interest):
 		endpoint = self.baseUrl + self.endpoints['event_detail'].format(event_id, fb_id, interest)
 
-		return self.client.get(endpoint)
+		return self.client.get(endpoint, name = self.endpoints['event_detail'].format(':event_id', ':fb_id', ':interest'))
 
 	def doGuestInterested(self, event_id, fb_id, interest):
 		endpoint = self.baseUrl + self.endpoints['guest_interested'].format(event_id, fb_id, interest)
 
-		return self.client.get(endpoint)
+		return self.client.get(endpoint, name = self.endpoints['guest_interested'].format(':event_id', ':fb_id', ':interest'))
 
 	def doSocial(self, fb_id, interest):
 		endpoint = self.baseUrl + self.endpoints['social'].format(fb_id, interest)
 
-		return self.client.get(endpoint)
+		return self.client.get(endpoint, name = self.endpoints['social'].format(':fb_id', ':interest'))
 
 	def doShare(self, fb_id, share_type, **kwargs):
 		endpoint = self.baseUrl + self.endpoints['share']
@@ -121,7 +121,7 @@ class JiggieTaskSet(TaskSet):
 				res = self.doEventDetail(event['_id'], login['data']['fb_id'], self.config['interest'])
 				eventDetail = json.loads(res.content)
 
-	#@task(1)
+	@task(1)
 	def goTillGuestInterested(self):
 		res = self.doLogin(self.getLoginParam())
 		login = json.loads(res.content)
@@ -138,7 +138,7 @@ class JiggieTaskSet(TaskSet):
 				res = self.doGuestInterested(event['_id'], login['data']['fb_id'], self.config['interest'])
 				guestInterested = json.loads(res.content)
 
-	#@task(1)
+	@task(1)
 	def goTillSocial(self):
 		res = self.doLogin(self.getLoginParam())
 		login = json.loads(res.content)
@@ -179,7 +179,7 @@ class JiggieTaskSet(TaskSet):
 			res = self.doConversationList(login['data']['fb_id'])
 			print(res.content)
 
-	@task(1)
+	#@task(1)
 	def goTillInvite(self):
 		res = self.doLogin(self.getLoginParam())
 		login = json.loads(res.content)
